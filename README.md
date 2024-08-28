@@ -9,7 +9,11 @@ For summarizing the messages, the bot is using the OpenAI API.
 2. Setup the Firestore database. [Instruction](https://medium.com/@androidcrypto/setup-of-a-cloud-firestore-database-tutorial-step-by-step-1ccc9ec52005) 
 3. Go to [IAM & admin > Service](https://console.cloud.google.com/iam-admin/serviceaccounts) accounts in the Google Cloud console. Generate a new private key and save the JSON file. Then use the file to initialize the SDK. Save this file as `serviceAccountKey.json` in the root directory.
 4. Create a new bot using the [BotFather](https://core.telegram.org/bots#6-botfather) and get the token. Save the token in the `.env` file.
-5. Generate the [OpenAI API](https://platform.openai.com/api-keys) key and save it in the `.env` file.
+5. Change the bot privacy settings to disable the "Group Privacy" option.
+    * Go to BotFather in Telegram send `/setprivacy`.
+    * Select the username of the bot.
+    * Select Disable.
+6. Generate the [OpenAI API](https://platform.openai.com/api-keys) key and save it in the `.env` file.
 
 ## Run on server
 ```bash
