@@ -35,14 +35,14 @@ async def save_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def summarize(update: Update, context: ContextTypes.DEFAULT_TYPE):
     limit = int(context.args[0]) if context.args[0] is not None else 50
-    messages = get_last_messages(str(update.effective_chat.id), limit)
+    messages = get_last_messages(str(update.message.chat.id), limit)
     result = ai_summarize(messages)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=result)
 
 
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
-        chat_id=update.effective_chat.id, text="Chat id: " + str(update.effective_chat.id)
+        chat_id=update.effective_chat.id, text="Chat id: " + str(update.message.chat.id)
     )
 
 

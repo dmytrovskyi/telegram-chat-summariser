@@ -7,7 +7,7 @@ from firebase_admin import firestore
 from telegram import Message
 from google.cloud.firestore_v1.base_document import DocumentSnapshot
 
-cred = credentials.Certificate("bich-f39db-firebase-adminsdk-ks0du-527cd9a2d6.json")
+cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
@@ -28,7 +28,7 @@ def save_message(message: Message):
         "text": message.text,
     }
     
-    db.collection("messages").document(str(message.chat.id)).add(s_message)
+    db.collection(str(message.chat.id)).add(s_message)
 
 
 def get_last_messages(chat_id, limit) -> List:
