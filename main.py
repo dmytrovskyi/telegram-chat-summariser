@@ -37,7 +37,7 @@ async def summarize(update: Update, context: ContextTypes.DEFAULT_TYPE):
     limit = int(context.args[0]) if context.args[0] is not None else 50
     messages = get_last_messages(str(update.message.chat.id), limit)
     result = ai_summarize(messages)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=result)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=result, parse_mode='MarkdownV2')
 
 
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -50,7 +50,7 @@ async def summarize_ironic(update: Update, context: ContextTypes.DEFAULT_TYPE):
     limit = int(context.args[0]) if context.args[0] is not None else 50
     messages = get_last_messages(str(update.effective_chat.id), limit)
     result = ai_summarize_ironic(messages)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=result)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=result, parse_mode='MarkdownV2')
 
 
 application = ApplicationBuilder().token(os.getenv("TELEGRAM_TOKEN")).build()
