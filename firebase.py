@@ -1,3 +1,5 @@
+#!./.venv/bin/python
+
 from typing import List
 import firebase_admin
 from firebase_admin import credentials
@@ -25,12 +27,13 @@ def save_message(message: Message):
         "reply_to_message": convert_reply_message(message.reply_to_message) if message.reply_to_message is not None else '',
         "text": message.text,
     }
-    db.collection("messages").add(s_message)
+    
+    db.collection("messages").document(str(message.chat.id)).add(s_message)
 
 
-def get_last_messages(limit) -> List:
+def get_last_messages(chat_id, limit) -> List:
     snapshots = (
-        db.collection("messages")
+        db.collection(chat_id)
         .order_by("date", direction=firestore.Query.DESCENDING)
         .limit(limit)
         .get()
