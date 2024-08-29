@@ -3,6 +3,7 @@
 import logging
 from typing import Callable
 from telegram import Update
+import telegram
 from telegram.ext import (
     filters,
     ApplicationBuilder,
@@ -11,6 +12,8 @@ from telegram.ext import (
     MessageHandler,
 )
 from firebase import save_message as fb_save_message, get_last_messages
+from md2tgmd import escape
+
 
 import os
 from dotenv import load_dotenv
@@ -45,7 +48,8 @@ async def default_summarize(
         )
         messages = get_last_messages(str(update.message.chat.id), limit)
         result = ai_func(messages)
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=result)
+        result = escape(result)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=result, parse_mode="MarkdownV2")
     except Exception as error:
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text=repr(error)

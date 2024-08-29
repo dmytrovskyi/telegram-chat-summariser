@@ -40,6 +40,7 @@ langchain-core==0.2.35
 langchain-openai==0.1.22
 langchain-text-splitters==0.2.2
 langsmith==0.1.105
+md2tgmd==0.3.1
 msgpack==1.0.8
 multidict==6.0.5
 numpy==1.26.4

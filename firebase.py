@@ -13,21 +13,34 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 
+def convert_user(user):
+    return {
+        "id": user.id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "username": user.username
+    }
+
+
 def convert_reply_message(message: Message):
     return {
-        "from": message.from_user.to_dict(),
-        "text": message.text,
+        "from": convert_user(message.from_user),
+        "text": message.text
     }
 
 
 def save_message(message: Message):
     s_message = {
         "date": message.date,
-        "from": message.from_user.to_dict(),
-        "reply_to_message": convert_reply_message(message.reply_to_message) if message.reply_to_message is not None else '',
-        "text": message.text,
+        "from": convert_user(message.from_user),
+        "reply_to_message": (
+            convert_reply_message(message.reply_to_message)
+            if message.reply_to_message is not None
+            else ""
+        ),
+        "text": message.text
     }
-    
+
     db.collection(str(message.chat.id)).add(s_message)
 
 
@@ -38,4 +51,4 @@ def get_last_messages(chat_id, limit) -> List:
         .limit(limit)
         .get()
     )
-    return list(map(lambda snap:snap.to_dict(), snapshots))
+    return list(map(lambda snap: snap.to_dict(), snapshots))
