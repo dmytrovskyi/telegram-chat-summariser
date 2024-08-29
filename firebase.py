@@ -51,4 +51,6 @@ def get_last_messages(chat_id, limit) -> List:
         .limit(limit)
         .get()
     )
-    return list(map(lambda snap: snap.to_dict(), snapshots))
+    result = list(map(lambda snap: snap.to_dict(), snapshots))
+    result.reverse()
+    return result
