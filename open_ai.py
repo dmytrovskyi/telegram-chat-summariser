@@ -5,8 +5,11 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
+from dotenv import load_dotenv
 
 from prompts import precise_template, ironic_template, identify_params_template
+
+load_dotenv()
 
 model_t9 = ChatOpenAI(model="gpt-4o-mini", temperature=0.9)
 model_t0 = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
