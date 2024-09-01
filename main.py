@@ -45,8 +45,14 @@ async def default_summarize(
             if (len(context.args) > 0 and context.args[0] is not None)
             else 100
         )
+        params = {}
+         
+        params["history_length"] = limit
+        params["language"] = "UKRAINIAN"
+        params["tone"] = "NEUTRAL"
+        
         messages = get_last_messages(str(update.message.chat.id), limit)
-        result = ai_func(messages)
+        result = ai_func(messages, params)
         result = escape(result)
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text=result, parse_mode="MarkdownV2"
@@ -103,7 +109,7 @@ def main():
 
     start_handler = CommandHandler("start", start)
     summarize_handler = CommandHandler("summarize", summarize)
-    summarize_handler = CommandHandler("s", summarize)
+    s_handler = CommandHandler("s", summarize)
     ironic_handler = CommandHandler("ironic", summarize_ironic)
     chat_id_handler = CommandHandler("chatid", get_chat_id)
     mention_handler = MessageHandler(filters.Mention(bot_name), bot_mention)
@@ -114,6 +120,7 @@ def main():
 
     application.add_handler(start_handler)
     application.add_handler(summarize_handler)
+    application.add_handler(s_handler)
     application.add_handler(ironic_handler)
     application.add_handler(save_message_handler)
     application.add_handler(chat_id_handler)
