@@ -18,6 +18,15 @@ TELEGRAM_BOT_NAME=your_bot_name
     * Select the username of the bot.
     * Select Disable.
 7. Generate the [OpenAI API](https://platform.openai.com/api-keys) key and save it in the `.env` file.
+8. You can change other variables in the `.env` file if you want.
+```
+DEFAULT_LANGUAGE=ENGLISH
+DEFAULT_HISTORY_LENGTH=100
+DEFAULT_TONE=NEUTRAL
+```
+
+## Links in summary
+If you want to include the links to the starting theme message in the summary, for public group your group have to be a SUPERGROUP. To make you group a supergroup, you should make it public and change back to the private.
 
 ## Run on server
 ```bash
@@ -39,6 +48,14 @@ pm2 start main.py --name summarizer_bot
 ### Commands
 - `/start` - Start the bot.
 - `/chatid` - Get the chat ID.
-- `/summarize n` - Summarize the last n messages in the chat. If n is not provided, the bot will summarize the last 50 messages.
-- `/ironic n` - Summarize the last n messages in the chat in an ironic manner. If n is not provided, the bot will summarize the last 50 messages.
-  
+- `/summarize n` or `/s n` - Summarize the last n messages in the chat. If n is not provided, the bot will summarize the last `DEFAULT_HISTORY_LENGTH` messages.
+
+### Retell the messages
+Retell the messages - the more wide summary of the messages in the chat.
+
+You can call `retell` function by mention the bot in the chat `@bot_name` and send in the message optionally: 
+- number of messages to retell `n` - the bot will retell the last n messages.
+- tone of the summary - the bot will retell the messages with the specified tone.
+- language of the summary - the bot will retell the messages in the retell language.
+
+All `retell` parameters are processed by LLM and you can use them in any order and combination.

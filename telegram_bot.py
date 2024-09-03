@@ -16,7 +16,12 @@ from md2tgmd import escape
 import os
 from dotenv import load_dotenv
 
-from open_ai import ai_identify_parameters, ai_summarize, ai_summarize_ironic
+from open_ai import (
+    ai_retell,
+    ai_identify_parameters,
+    ai_retell,
+    ai_summarize,
+)
 
 load_dotenv()
 
@@ -42,16 +47,17 @@ async def default_summarize(
         limit = (
             int(context.args[0])
             if (len(context.args) > 0 and context.args[0] is not None)
-            else 100
+            else int(os.getenv("DEFAULT_HISTORY_LENGTH"))
         )
         params = {}
-         
+
         params["history_length"] = limit
-        params["language"] = "UKRAINIAN"
-        params["tone"] = "NEUTRAL"
-        
+        params["language"] = os.getenv("DEFAULT_LANGUAGE")
+        params["tone"] = os.getenv("DEFAULT_TONE")
+        params["chat_id"] = str(update.message.chat.id)
+
         messages = get_last_messages(str(update.message.chat.id), limit)
-        result = ai_func(messages, params)
+        result = ai_func(messages, params, update.message.chat.type)
         result = escape(result)
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text=result, parse_mode="MarkdownV2"
@@ -66,8 +72,8 @@ async def summarize(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await default_summarize(update, context, ai_summarize)
 
 
-async def summarize_ironic(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await default_summarize(update, context, ai_summarize_ironic)
+async def retell(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await default_summarize(update, context, ai_retell)
 
 
 async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -79,18 +85,20 @@ async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def bot_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         params = ai_identify_parameters(update.message.text)
-
+        
         if params["history_length"] is None:
-            params["history_length"] = 100
+            params["history_length"] = int(os.getenv("DEFAULT_HISTORY_LENGTH"))
         if params["language"] is None:
-            params["language"] = "UKRAINIAN"
+            params["language"] = os.getenv("DEFAULT_LANGUAGE")
         if params["tone"] is None:
-            params["tone"] = "NEUTRAL"
+            params["tone"] = os.getenv("DEFAULT_TONE")
+
+        params["chat_id"] = str(update.message.chat.id)
 
         messages = get_last_messages(
             str(update.message.chat.id), params["history_length"]
         )
-        result = ai_summarize(messages, params)
+        result = ai_retell(messages, params)
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=escape(result),
@@ -100,16 +108,16 @@ async def bot_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text=repr(error)
         )
-        
+
+
 def start_bot():
     bot_name = os.getenv("TELEGRAM_BOT_NAME")
 
     application = ApplicationBuilder().token(os.getenv("TELEGRAM_TOKEN")).build()
 
     start_handler = CommandHandler("start", start)
-    summarize_handler = CommandHandler("summarize", summarize)
     s_handler = CommandHandler("s", summarize)
-    ironic_handler = CommandHandler("ironic", summarize_ironic)
+    summarize_handler = CommandHandler("summarize", summarize)
     chat_id_handler = CommandHandler("chatid", get_chat_id)
     mention_handler = MessageHandler(filters.Mention(bot_name), bot_mention)
     save_message_handler = MessageHandler(
@@ -118,9 +126,8 @@ def start_bot():
     )
 
     application.add_handler(start_handler)
-    application.add_handler(summarize_handler)
     application.add_handler(s_handler)
-    application.add_handler(ironic_handler)
+    application.add_handler(summarize_handler)
     application.add_handler(save_message_handler)
     application.add_handler(chat_id_handler)
     application.add_handler(mention_handler)

@@ -12,7 +12,6 @@ firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-
 def convert_user(user):
     return {
         "id": user.id,
@@ -31,6 +30,7 @@ def convert_reply_message(message: Message):
 
 def save_message(message: Message):
     s_message = {
+        "message_id": message.message_id,   
         "date": message.date,
         "from": convert_user(message.from_user),
         "reply_to_message": (

@@ -6,8 +6,14 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from dotenv import load_dotenv
+from telegram.constants import ChatType
 
-from prompts import precise_template, ironic_template, identify_params_template
+from prompts import (
+    summarize_template_with_links,
+    summarize_template,
+    retell_template,
+    identify_params_template,
+)
 
 load_dotenv()
 
@@ -27,15 +33,25 @@ def ai_summarize_basic(messages: str, template: str):
     return chain_t9.invoke(request)
 
 
-def ai_summarize(messages, params):
-    template = PromptTemplate.from_template(precise_template).format(
-        language=params['language'], tone=params['tone']
+def ai_retell(messages, params):
+    template = PromptTemplate.from_template(retell_template).format(
+        language=params["language"], tone=params["tone"]
     )
     return ai_summarize_basic(messages, template)
 
 
-def ai_summarize_ironic(messages):
-    return ai_summarize_basic(messages, ironic_template)
+def ai_summarize(messages, params, chat_type):
+    template = summarize_template
+    chat_id = params["chat_id"]
+
+    if chat_type == ChatType.SUPERGROUP:
+        template = summarize_template_with_links
+        chat_id = str(chat_id)[4:]
+
+    template = PromptTemplate.from_template(template).format(
+        language=params["language"], tone=params["tone"], chat_id=chat_id
+    )
+    return ai_summarize_basic(messages, template)
 
 
 def ai_identify_parameters(message):
