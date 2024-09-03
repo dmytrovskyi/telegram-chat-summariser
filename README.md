@@ -26,7 +26,7 @@ DEFAULT_TONE=NEUTRAL
 ```
 
 ## Links in summary
-If you want to include the links to the starting theme message in the summary, for public group your group have to be a SUPERGROUP. To make you group a supergroup, you should make it public and change back to the private.
+If you want to include the links to the starting theme message in the summary, for private group your group have to be a SUPERGROUP. To make you group a SUPERGROUP, you should make it public and change back to the private.
 
 ## Run on server
 ```bash
