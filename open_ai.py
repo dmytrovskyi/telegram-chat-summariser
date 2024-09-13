@@ -65,3 +65,17 @@ def ai_identify_parameters(message):
 def ai_request_with_params(message):
     params = ai_identify_parameters(message)
     return params
+
+def ai_describe_image(base64_data):
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "describe what in the image image"},
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{base64_data}"},
+            },
+        ],
+    )
+    response = chain_t9.invoke([message])
+    return response
+ 

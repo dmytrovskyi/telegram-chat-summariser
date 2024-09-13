@@ -1,7 +1,7 @@
 #!./.venv/bin/python
 
 import logging
-from typing import Callable
+from typing import Callable, List
 from telegram import Update
 from telegram.ext import (
     filters,
@@ -17,11 +17,13 @@ import os
 from dotenv import load_dotenv
 
 from open_ai import (
+    ai_describe_image,
     ai_retell,
     ai_identify_parameters,
     ai_retell,
     ai_summarize,
 )
+import base64
 
 load_dotenv()
 
@@ -37,8 +39,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def save_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    fb_save_message(update.message)
+    image_description = await process_images(update, context)
+    fb_save_message(update.message, image_description)
 
+
+async def process_images(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
+    image_description = None
+    if update.message.photo != None and len(update.message.photo) > 0:
+        highest_quality_photo_id = update.message.photo[-1].file_id
+
+        file = await context.bot.get_file(highest_quality_photo_id)
+        byte_array = await file.download_as_bytearray()
+        image_data = base64.b64encode(byte_array).decode("utf-8")
+        image_description = ai_describe_image(image_data)
+    return image_description
 
 async def default_summarize(
     update: Update, context: ContextTypes.DEFAULT_TYPE, ai_func: Callable
@@ -85,7 +99,7 @@ async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def bot_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         params = ai_identify_parameters(update.message.text)
-        
+
         if params["history_length"] is None:
             params["history_length"] = int(os.getenv("DEFAULT_HISTORY_LENGTH"))
         if params["language"] is None:
@@ -121,7 +135,9 @@ def start_bot():
     chat_id_handler = CommandHandler("chatid", get_chat_id)
     mention_handler = MessageHandler(filters.Mention(bot_name), bot_mention)
     save_message_handler = MessageHandler(
-        filters.TEXT & (~filters.COMMAND) & (~filters.Mention(bot_name)),
+        (filters.TEXT | filters.PHOTO)
+        & (~filters.COMMAND)
+        & (~filters.Mention(bot_name)),
         save_message,
     )
 

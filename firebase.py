@@ -28,9 +28,14 @@ def convert_reply_message(message: Message):
     }
 
 
-def save_message(message: Message):
+def save_message(message: Message, image_description: str):
+    message_text = (
+        message.text
+        if message.text != None
+        else message.caption if message.caption != None else ""
+    )
     s_message = {
-        "message_id": message.message_id,   
+        "message_id": message.message_id,
         "date": message.date,
         "from": convert_user(message.from_user),
         "reply_to_message": (
@@ -38,8 +43,11 @@ def save_message(message: Message):
             if message.reply_to_message is not None
             else ""
         ),
-        "text": message.text
+        "text": message_text,
     }
+
+    if image_description != None and len(image_description) > 0:
+        s_message["attachment_description"] = image_description
 
     db.collection(str(message.chat.id)).add(s_message)
 
