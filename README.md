@@ -24,6 +24,10 @@ DEFAULT_LANGUAGE=ENGLISH
 DEFAULT_HISTORY_LENGTH=100
 DEFAULT_TONE=NEUTRAL
 ```
+9. Bot can transform voice to text. To enable this feature you need additional library `ffmpeg`. 
+```bash
+sudo apt-get install ffmpeg
+```
 
 ## Links in summary
 If you want to include the links to the starting theme message in the summary, for private group your group have to be a SUPERGROUP. To make you group a SUPERGROUP, you should make it public and change back to the private.
