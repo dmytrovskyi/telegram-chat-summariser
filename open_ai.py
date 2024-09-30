@@ -1,11 +1,17 @@
 #!./.venv/bin/python
 
+import base64
 import json
+from pathlib import Path
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
+from langchain_core.documents.base import Blob
 from dotenv import load_dotenv
+from langchain_community.document_loaders.parsers.audio import OpenAIWhisperParser
+
+
 from telegram.constants import ChatType
 
 from prompts import (
@@ -19,12 +25,12 @@ load_dotenv()
 
 model_t9 = ChatOpenAI(model="gpt-4o-mini", temperature=0.9)
 model_t0 = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
+whisper_parser = OpenAIWhisperParser()
 
 parser = StrOutputParser()
 
 chain_t9 = model_t9 | parser
 chain_t0 = model_t0 | parser
-
 
 def ai_summarize_basic(messages: str, template: str):
     jjj = json.dumps(messages, sort_keys=True, default=str, ensure_ascii=False)
@@ -78,4 +84,13 @@ def ai_describe_image(base64_data):
     )
     response = chain_t9.invoke([message])
     return response
+
+def ai_transcript_audio(path: Path) -> str:
+    blob = Blob.from_path(path)
+    documents = whisper_parser.parse(blob)
+    result = ''
+    for doc in documents:
+        if doc.page_content:
+            result += doc.page_content
+    return result
  

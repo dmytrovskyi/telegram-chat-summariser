@@ -1,7 +1,8 @@
 #!./.venv/bin/python
 
+import io
 import logging
-from typing import Callable, List
+from typing import Callable
 from telegram import Update
 from telegram.ext import (
     filters,
@@ -22,6 +23,7 @@ from open_ai import (
     ai_identify_parameters,
     ai_retell,
     ai_summarize,
+    ai_transcript_audio,
 )
 import base64
 
@@ -123,6 +125,12 @@ async def bot_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=update.effective_chat.id, text=repr(error)
         )
 
+async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    new_file = await context.bot.get_file(update.message.voice.file_id)
+    path_to_file = await new_file.download_to_drive()
+    transcription = ai_transcript_audio(path_to_file)
+    fb_save_message(update.message, transcription)
+    path_to_file.unlink()
 
 def start_bot():
     bot_name = os.getenv("TELEGRAM_BOT_NAME")
@@ -134,6 +142,7 @@ def start_bot():
     summarize_handler = CommandHandler("summarize", summarize)
     chat_id_handler = CommandHandler("chatid", get_chat_id)
     mention_handler = MessageHandler(filters.Mention(bot_name), bot_mention)
+    voice_message_handler = MessageHandler(filters.VOICE, process_voice_message)
     save_message_handler = MessageHandler(
         (filters.TEXT | filters.PHOTO)
         & (~filters.COMMAND)
@@ -147,5 +156,6 @@ def start_bot():
     application.add_handler(save_message_handler)
     application.add_handler(chat_id_handler)
     application.add_handler(mention_handler)
+    application.add_handler(voice_message_handler)
 
     application.run_polling()

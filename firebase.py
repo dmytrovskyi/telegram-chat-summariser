@@ -12,27 +12,25 @@ firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
+
 def convert_user(user):
     return {
         "id": user.id,
         "first_name": user.first_name,
         "last_name": user.last_name,
-        "username": user.username
+        "username": user.username,
     }
 
 
 def convert_reply_message(message: Message):
-    return {
-        "from": convert_user(message.from_user),
-        "text": message.text
-    }
+    return {"from": convert_user(message.from_user), "text": message.text}
 
 
 def save_message(message: Message, image_description: str):
     message_text = (
         message.text
         if message.text != None
-        else message.caption if message.caption != None else ""
+        else message.caption if message.caption != None else image_description
     )
     s_message = {
         "message_id": message.message_id,
