@@ -134,10 +134,12 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
         transcription = ai_transcript_audio(path_to_file)
         fb_save_message(update.message, transcription)
         if os.getenv("IS_ECHO_VOICE_MESSAGES") == "true":
+            reply_text = f"*{update.message.from_user.username}*: {escape(transcription)}"
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=transcription,
+                text=reply_text,
                 reply_to_message_id=update.message.message_id,
+                parse_mode="MarkdownV2",
             )
     except:
         pass
