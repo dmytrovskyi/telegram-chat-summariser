@@ -126,11 +126,24 @@ async def bot_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    new_file = await context.bot.get_file(update.message.voice.file_id)
-    path_to_file = await new_file.download_to_drive()
-    transcription = ai_transcript_audio(path_to_file)
-    fb_save_message(update.message, transcription)
-    path_to_file.unlink()
+    
+    path_to_file = None
+    try:
+        new_file = await context.bot.get_file(update.message.voice.file_id)
+        path_to_file = await new_file.download_to_drive()
+        transcription = ai_transcript_audio(path_to_file)
+        fb_save_message(update.message, transcription)
+        if os.getenv("IS_ECHO_VOICE_MESSAGES") == "true":
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=transcription,
+                reply_to_message_id=update.message.message_id,
+            )
+    except:
+        pass
+    finally:
+        if path_to_file != None:
+            path_to_file.unlink()
 
 def start_bot():
     bot_name = os.getenv("TELEGRAM_BOT_NAME")

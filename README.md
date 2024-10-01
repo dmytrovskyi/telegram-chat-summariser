@@ -28,6 +28,10 @@ DEFAULT_TONE=NEUTRAL
 ```bash
 sudo apt-get install ffmpeg
 ```
+9.1. You can send the transcript of the voice message to the chat if you set env variable `IS_ECHO_VOICE_MESSAGES` to `true`.
+```bash
+IS_ECHO_VOICE_MESSAGES=true
+```
 
 ## Links in summary
 If you want to include the links to the starting theme message in the summary, for private group your group have to be a SUPERGROUP. To make you group a SUPERGROUP, you should make it public and change back to the private.
