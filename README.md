@@ -24,11 +24,11 @@ DEFAULT_LANGUAGE=ENGLISH
 DEFAULT_HISTORY_LENGTH=100
 DEFAULT_TONE=NEUTRAL
 ```
-9. Bot can transform voice to text. To enable this feature you need additional library `ffmpeg`. 
+9. Bot can transform voice-to-text, video-note-to-text and video-to=text. To enable this feature you need additional library `ffmpeg` on app environment. 
 ```bash
 sudo apt-get install ffmpeg
 ```
-9.1. You can send the transcript of the voice message to the chat if you set env variable `IS_ECHO_VOICE_MESSAGES` to `true`.
+9.1. You can send the transcript of the voice message, video message and video-note message to the chat if you set env variable `IS_ECHO_VOICE_MESSAGES` to `true`.
 ```bash
 IS_ECHO_VOICE_MESSAGES=true
 ```

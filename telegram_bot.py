@@ -1,8 +1,8 @@
-#!./.venv/bin/python
+#!./venv/bin/python
 
-import io
 import logging
 from typing import Callable
+import ffmpeg.stream
 from telegram import Update
 from telegram.ext import (
     filters,
@@ -26,6 +26,7 @@ from open_ai import (
     ai_transcript_audio,
 )
 import base64
+import ffmpeg
 
 load_dotenv()
 
@@ -55,6 +56,7 @@ async def process_images(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         image_data = base64.b64encode(byte_array).decode("utf-8")
         image_description = ai_describe_image(image_data)
     return image_description
+
 
 async def default_summarize(
     update: Update, context: ContextTypes.DEFAULT_TYPE, ai_func: Callable
@@ -125,8 +127,11 @@ async def bot_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=update.effective_chat.id, text=repr(error)
         )
 
-async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    
+
+async def process_voice_message(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+
     path_to_file = None
     try:
         new_file = await context.bot.get_file(update.message.voice.file_id)
@@ -134,7 +139,9 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
         transcription = ai_transcript_audio(path_to_file)
         fb_save_message(update.message, transcription)
         if os.getenv("IS_ECHO_VOICE_MESSAGES") == "true":
-            reply_text = f"*{update.message.from_user.username}*: {escape(transcription)}"
+            reply_text = (
+                f"*{update.message.from_user.username}*: {escape(transcription)}"
+            )
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=reply_text,
@@ -147,6 +154,69 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
         if path_to_file != None:
             path_to_file.unlink()
 
+
+async def process_video_message(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    path_to_video_file = None
+    audio_file_path = None
+    try:
+        new_file = await context.bot.get_file(update.message.video.file_id)
+        path_to_video_file = await new_file.download_to_drive()
+        audio_file_path = path_to_video_file.with_suffix(".mp3")
+        ffmpeg.input(path_to_video_file).output(audio_file_path.name).run()
+        transcription = ai_transcript_audio(audio_file_path)
+        fb_save_message(update.message, transcription)
+        if os.getenv("IS_ECHO_VOICE_MESSAGES") == "true":
+            reply_text = (
+                f"*{update.message.from_user.username}*: {escape(transcription)}"
+            )
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=reply_text,
+                reply_to_message_id=update.message.message_id,
+                parse_mode="MarkdownV2",
+            )
+    except:
+        pass
+    finally:
+        if path_to_video_file != None:
+            path_to_video_file.unlink()
+        if audio_file_path != None:
+            audio_file_path.unlink()
+
+
+async def process_video_note_message(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    path_to_video_file = None
+    audio_file_path = None
+    try:
+        new_file = await context.bot.get_file(update.message.video_note.file_id)
+        path_to_video_file = await new_file.download_to_drive()
+        audio_file_path = path_to_video_file.with_suffix(".mp3")
+        ffmpeg.input(path_to_video_file).output(audio_file_path.name).run()
+        transcription = ai_transcript_audio(audio_file_path)
+        fb_save_message(update.message, transcription)
+        if os.getenv("IS_ECHO_VOICE_MESSAGES") == "true":
+            reply_text = (
+                f"*{update.message.from_user.username}*: {escape(transcription)}"
+            )
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=reply_text,
+                reply_to_message_id=update.message.message_id,
+                parse_mode="MarkdownV2",
+            )
+    except:
+        pass
+    finally:
+        if path_to_video_file != None:
+            path_to_video_file.unlink()
+        if audio_file_path != None:
+            audio_file_path.unlink()
+
+
 def start_bot():
     bot_name = os.getenv("TELEGRAM_BOT_NAME")
 
@@ -158,6 +228,10 @@ def start_bot():
     chat_id_handler = CommandHandler("chatid", get_chat_id)
     mention_handler = MessageHandler(filters.Mention(bot_name), bot_mention)
     voice_message_handler = MessageHandler(filters.VOICE, process_voice_message)
+    video_message_handler = MessageHandler(filters.VIDEO, process_video_message)
+    video_note_message_handler = MessageHandler(
+        filters.VIDEO_NOTE, process_video_note_message
+    )
     save_message_handler = MessageHandler(
         (filters.TEXT | filters.PHOTO)
         & (~filters.COMMAND)
@@ -172,5 +246,7 @@ def start_bot():
     application.add_handler(chat_id_handler)
     application.add_handler(mention_handler)
     application.add_handler(voice_message_handler)
+    application.add_handler(video_message_handler)
+    application.add_handler(video_note_message_handler)
 
     application.run_polling()

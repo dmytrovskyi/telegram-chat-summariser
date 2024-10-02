@@ -14,8 +14,11 @@ cryptography==43.0.0
 dataclasses-json==0.6.7
 distro==1.9.0
 fastapi==0.112.2
+ffmpeg==1.4
+ffmpeg-python==0.2.0
 firebase-admin==6.5.0
 frozenlist==1.4.1
+future==1.0.0
 google-api-core==2.19.1
 google-api-python-client==2.142.0
 google-auth==2.34.0
