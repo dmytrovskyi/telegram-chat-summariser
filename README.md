@@ -4,6 +4,8 @@ For summarizing the messages, the bot is using the OpenAI API.
 
 💰 The OpenAI API **is not free**, so you need to have an account and generate the API key. 💰 
 
+# [telegram-chat-summariser](https://github.com/dmytrovskyi/telegram-chat-summariser)
+
 ## Presetup
 1. Rename .example.env to .env.
 2. Setup the Firestore database. [Instruction](https://medium.com/@androidcrypto/setup-of-a-cloud-firestore-database-tutorial-step-by-step-1ccc9ec52005) 
