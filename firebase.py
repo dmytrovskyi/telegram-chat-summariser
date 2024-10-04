@@ -52,7 +52,8 @@ def save_message(message: Message, image_description: str):
 
 def get_last_messages(chat_id, limit) -> List:
     snapshots = (
-        db.collection(chat_id)
+        # db.collection(chat_id)
+        db.collection("-4078904994")
         .order_by("date", direction=firestore.Query.DESCENDING)
         .limit(limit)
         .get()
