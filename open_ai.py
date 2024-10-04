@@ -1,6 +1,5 @@
-#!./.venv/bin/python
+#!./venv/bin/python
 
-import base64
 import json
 from pathlib import Path
 from langchain_openai import ChatOpenAI
@@ -10,6 +9,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.documents.base import Blob
 from dotenv import load_dotenv
 from langchain_community.document_loaders.parsers.audio import OpenAIWhisperParser
+import prompts
 
 
 from telegram.constants import ChatType
@@ -93,4 +93,12 @@ def ai_transcript_audio(path: Path) -> str:
         if doc.page_content:
             result += doc.page_content
     return result
+
+def ai_summarize_page_content(page_content: str):
+    messages = [
+        SystemMessage(content=prompts.summarize_web_content),
+        HumanMessage(content=page_content),
+    ]
+    response = chain_t9.invoke(messages)
+    return response
  

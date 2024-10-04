@@ -28,7 +28,10 @@ from open_ai import (
 import base64
 import ffmpeg
 
+from tools import process_urls
+
 load_dotenv()
+from urllib.parse import urlparse
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -44,6 +47,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def save_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     image_description = await process_images(update, context)
     fb_save_message(update.message, image_description)
+
+    try:
+        url_summaries = await process_urls(update.message.text)
+        if url_summaries != None and len(url_summaries) > 0:
+            for summary in url_summaries:
+                title = summary.metadata["title"] if "title" in summary.metadata else "Summary"
+                reply_text = (
+                    f"*{escape(title)}*: {escape(summary.page_content)}"
+                )
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=reply_text,
+                    reply_to_message_id=update.message.message_id,
+                    parse_mode="MarkdownV2",
+                )
+    except Exception as error:
+        print(repr(error))
 
 
 async def process_images(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
