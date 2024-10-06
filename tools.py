@@ -1,8 +1,11 @@
+import asyncio
+from typing import List, Optional
 from urllib.parse import urlparse
 from langchain_community.document_loaders import WebBaseLoader
 
 from open_ai import ai_summarize_page_content
 from langchain_community.document_loaders import YoutubeLoader
+from pytube.exceptions import PytubeError
 
 language_codes = [
     "en", "ru", "uk", "de", "es", "ab", "aa", "af", "ak", "sq", "am", "ar", "hy", "as", "ay", "az", "bn", "ba", "eu", "be", "bho", "bs", "br", "bg", "my",
@@ -15,38 +18,104 @@ language_codes = [
     "tr", "tk", "uk", "ur", "ug", "uz", "ve", "vi", "war", "cy", "fy", "wo", "xh", "yi", "yo", "zu"
 ]
 
-async def process_urls(message: str):
-    # Split the string into words
-    words = message.split()
+async def process_urls(message: str) -> Optional[List]:
+    """
+    Process URLs found in the input message.
 
-    # Extract URLs from the words using urlparse()
+    Extracts the first valid URL from the message, creates an appropriate loader
+    based on the URL type (YouTube or web), and loads the document with retry logic
+    for YouTube videos. Summarizes the page content using AI.
+
+    Args:
+        message (str): The input message containing URLs.
+
+    Returns:
+        Optional[List]: A list containing the processed document or None if processing fails.
+    """
+    urls = extract_urls_from_message(message)
+    if not urls:
+        return None
+
+    url = urls[0]
+    if "t.me" in url:
+        return None
+
+    loader = create_loader_for_url(url)
+    if not loader:
+        return None
+
+    document = await load_document_with_retries(loader)
+    if not document:
+        print("Failed to load the document after maximum retries.")
+        return None
+
+    document.page_content = ai_summarize_page_content(document.page_content)
+    return [document]
+
+
+def extract_urls_from_message(message: str) -> List[str]:
+    """
+    Extracts URLs from the input message.
+
+    Args:
+        message (str): The input message containing potential URLs.
+
+    Returns:
+        List[str]: A list of extracted URLs.
+    """
+    words = message.split()
     urls = []
     for word in words:
-        parsed = urlparse(word)
-        if parsed.scheme and parsed.netloc:
+        parsed_url = urlparse(word)
+        if parsed_url.scheme and parsed_url.netloc:
             urls.append(word)
+    return urls
 
-    if len(urls) == 0:
-        return None
 
-    url = str(urls[0])
+def create_loader_for_url(url: str):
+    """
+    Creates an appropriate loader based on the URL.
 
-    if url.find("t.me") != -1:
-        return None
+    Args:
+        url (str): The URL to create a loader for.
 
-    loader = None
-    if url.find("youtube") != -1 or url.find("youtu.be") != -1:
-        loader = YoutubeLoader.from_youtube_url(url, add_video_info=True, language=language_codes)
+    Returns:
+        Loader object or None if URL is unsupported.
+    """
+    if "youtube" in url or "youtu.be" in url:
+        return YoutubeLoader.from_youtube_url(
+            url, add_video_info=True, language=language_codes
+        )
+    elif "http" in url or "https" in url:
+        return WebBaseLoader(web_paths=[url])
     else:
-        loader = WebBaseLoader(web_paths=[urls[0]])
+        print("Unsupported URL format.")
+        return None
 
-    docs = []
-    async for doc in loader.alazy_load():
-        docs.append(doc)
 
-    summaries = []
-    for doc in docs:
-        doc.page_content = ai_summarize_page_content(doc.page_content)
-        summaries.append(doc)
+async def load_document_with_retries(loader, max_retries: int = 20):
+    """
+    Loads a document using the provided loader with retry logic for PytubeError.
 
-    return summaries
+    Args:
+        loader: The document loader instance.
+        max_retries (int): Maximum number of retry attempts.
+
+    Returns:
+        The loaded document or None if all retries fail.
+    """
+    for attempt in range(1, max_retries + 1):
+        try:
+            documents = loader.load()
+            if documents:
+                return documents[0]
+            else:
+                print("No documents were returned by the loader.")
+                return None
+        except PytubeError:
+            print(f"Failed to load the video. Retrying... ({attempt}/{max_retries})")
+            await asyncio.sleep(2)  # Optional delay between retries
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            raise
+    return None
