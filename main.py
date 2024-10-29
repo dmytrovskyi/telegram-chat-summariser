@@ -1,4 +1,4 @@
-#!./.venv/bin/python
+#!./venv/bin/python
 
 from telegram_bot import start_bot
 

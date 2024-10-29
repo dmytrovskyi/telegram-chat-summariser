@@ -51,7 +51,11 @@ async def save_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message_text = (
             update.message.text
             if update.message.text != None
-            else update.message.caption if update.message.caption != None else image_description
+            else (
+                update.message.caption
+                if update.message.caption != None
+                else image_description
+            )
         )
         if message_text == None:
             return
@@ -77,7 +81,12 @@ async def save_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def process_images(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
     image_description = None
-    if update.message.photo != None and len(update.message.photo) > 0:
+    if (
+        update != None
+        and update.message != None
+        and update.message.photo != None
+        and len(update.message.photo) > 0
+    ):
         highest_quality_photo_id = update.message.photo[-1].file_id
 
         file = await context.bot.get_file(highest_quality_photo_id)

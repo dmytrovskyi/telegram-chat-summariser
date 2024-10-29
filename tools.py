@@ -18,6 +18,12 @@ language_codes = [
     "tr", "tk", "uk", "ur", "ug", "uz", "ve", "vi", "war", "cy", "fy", "wo", "xh", "yi", "yo", "zu"
 ]
 
+non_supported_urls = [
+    "t.me",
+    "youtube.com",
+    "youtu.be",
+    "maps.",
+]
 async def process_urls(message: str) -> Optional[List]:
     """
     Process URLs found in the input message.
@@ -37,7 +43,8 @@ async def process_urls(message: str) -> Optional[List]:
         return None
 
     url = urls[0]
-    if "t.me" in url:
+
+    if any(non_supported_url in url for non_supported_url in non_supported_urls):
         return None
 
     loader = create_loader_for_url(url)
