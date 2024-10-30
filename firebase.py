@@ -27,6 +27,9 @@ def convert_reply_message(message: Message):
 
 
 def save_message(message: Message, image_description: str):
+    if message == None:
+        return
+    
     message_text = (
         message.text
         if message.text != None
