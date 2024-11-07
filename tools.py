@@ -23,7 +23,8 @@ non_supported_urls = [
     "youtube.com",
     "youtu.be",
     "maps.",
-    "reddit.com"
+    "reddit.com",
+    "tiktok.com",
 ]
 async def process_urls(message: str) -> Optional[List]:
     """

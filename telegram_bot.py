@@ -44,6 +44,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def save_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update == None or update.message == None:
+        return
+
     image_description = await process_images(update, context)
     fb_save_message(update.message, image_description)
 
@@ -139,6 +142,9 @@ async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def bot_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update == None or update.message == None:
+        return
+
     try:
         params = ai_identify_parameters(update.message.text)
 
