@@ -8,14 +8,165 @@ from langchain_community.document_loaders import YoutubeLoader
 from pytube.exceptions import PytubeError
 
 language_codes = [
-    "en", "ru", "uk", "de", "es", "ab", "aa", "af", "ak", "sq", "am", "ar", "hy", "as", "ay", "az", "bn", "ba", "eu", "be", "bho", "bs", "br", "bg", "my",
-    "ca", "ceb", "zh-Hans", "zh-Hant", "co", "hr", "cs", "da", "dv", "nl", "dz", "en", "eo", "et", "ee", "fo", "fj", "fil",
-    "fi", "fr", "gaa", "gl", "lg", "ka", "de", "el", "gn", "gu", "ht", "ha", "haw", "iw", "hi", "hmn", "hu", "is", "ig", "id",
-    "ga", "it", "ja", "jv", "kl", "kn", "kk", "kha", "km", "rw", "ko", "kri", "ku", "ky", "lo", "la", "lv", "ln", "lt", "luo",
-    "lb", "mk", "mg", "ms", "ml", "mt", "gv", "mi", "mr", "mn", "mfe", "ne", "new", "nso", "no", "ny", "oc", "or", "om", "os",
-    "pam", "ps", "fa", "pl", "pt", "pt-PT", "pa", "qu", "ro", "rn", "ru", "sm", "sg", "sa", "gd", "sr", "crs", "sn", "sd", "si",
-    "sk", "sl", "so", "st", "es", "su", "sw", "ss", "sv", "tg", "ta", "tt", "te", "th", "bo", "ti", "to", "ts", "tn", "tum",
-    "tr", "tk", "uk", "ur", "ug", "uz", "ve", "vi", "war", "cy", "fy", "wo", "xh", "yi", "yo", "zu"
+    "en",
+    "ru",
+    "uk",
+    "de",
+    "es",
+    "ab",
+    "aa",
+    "af",
+    "ak",
+    "sq",
+    "am",
+    "ar",
+    "hy",
+    "as",
+    "ay",
+    "az",
+    "bn",
+    "ba",
+    "eu",
+    "be",
+    "bho",
+    "bs",
+    "br",
+    "bg",
+    "my",
+    "ca",
+    "ceb",
+    "zh-Hans",
+    "zh-Hant",
+    "co",
+    "hr",
+    "cs",
+    "da",
+    "dv",
+    "nl",
+    "dz",
+    "en",
+    "eo",
+    "et",
+    "ee",
+    "fo",
+    "fj",
+    "fil",
+    "fi",
+    "fr",
+    "gaa",
+    "gl",
+    "lg",
+    "ka",
+    "de",
+    "el",
+    "gn",
+    "gu",
+    "ht",
+    "ha",
+    "haw",
+    "iw",
+    "hi",
+    "hmn",
+    "hu",
+    "is",
+    "ig",
+    "id",
+    "ga",
+    "it",
+    "ja",
+    "jv",
+    "kl",
+    "kn",
+    "kk",
+    "kha",
+    "km",
+    "rw",
+    "ko",
+    "kri",
+    "ku",
+    "ky",
+    "lo",
+    "la",
+    "lv",
+    "ln",
+    "lt",
+    "luo",
+    "lb",
+    "mk",
+    "mg",
+    "ms",
+    "ml",
+    "mt",
+    "gv",
+    "mi",
+    "mr",
+    "mn",
+    "mfe",
+    "ne",
+    "new",
+    "nso",
+    "no",
+    "ny",
+    "oc",
+    "or",
+    "om",
+    "os",
+    "pam",
+    "ps",
+    "fa",
+    "pl",
+    "pt",
+    "pt-PT",
+    "pa",
+    "qu",
+    "ro",
+    "rn",
+    "ru",
+    "sm",
+    "sg",
+    "sa",
+    "gd",
+    "sr",
+    "crs",
+    "sn",
+    "sd",
+    "si",
+    "sk",
+    "sl",
+    "so",
+    "st",
+    "es",
+    "su",
+    "sw",
+    "ss",
+    "sv",
+    "tg",
+    "ta",
+    "tt",
+    "te",
+    "th",
+    "bo",
+    "ti",
+    "to",
+    "ts",
+    "tn",
+    "tum",
+    "tr",
+    "tk",
+    "uk",
+    "ur",
+    "ug",
+    "uz",
+    "ve",
+    "vi",
+    "war",
+    "cy",
+    "fy",
+    "wo",
+    "xh",
+    "yi",
+    "yo",
+    "zu",
 ]
 
 non_supported_urls = [
@@ -29,6 +180,8 @@ non_supported_urls = [
     "instagram.com",
     "egov.uscis.gov",
 ]
+
+
 async def process_urls(message: str) -> Optional[List]:
     """
     Process URLs found in the input message.
@@ -48,9 +201,6 @@ async def process_urls(message: str) -> Optional[List]:
         return None
 
     url = urls[0]
-
-    if any(non_supported_url in url for non_supported_url in non_supported_urls):
-        return None
 
     loader = create_loader_for_url(url)
     if not loader:
@@ -81,7 +231,14 @@ def extract_urls_from_message(message: str) -> List[str]:
         parsed_url = urlparse(word)
         if parsed_url.scheme and parsed_url.netloc:
             urls.append(word)
-    return urls
+
+    # Remove URLs that are in the non_supported_urls list
+    filtered_urls = [
+        url
+        for url in urls
+        if not any(non_supported_url in url for non_supported_url in non_supported_urls)
+    ]
+    return filtered_urls
 
 
 def create_loader_for_url(url: str):
