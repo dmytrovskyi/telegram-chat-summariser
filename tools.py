@@ -25,6 +25,9 @@ non_supported_urls = [
     "maps.",
     "reddit.com",
     "tiktok.com",
+    "x.com",
+    "instagram.com",
+    "egov.uscis.gov",
 ]
 async def process_urls(message: str) -> Optional[List]:
     """

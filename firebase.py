@@ -26,7 +26,7 @@ def convert_reply_message(message: Message):
     return {"from": convert_user(message.from_user), "text": message.text}
 
 
-def save_message(message: Message, image_description: str):
+def save_message(message: Message, image_description: str) -> str:
     if message == None:
         return
     
@@ -50,7 +50,8 @@ def save_message(message: Message, image_description: str):
     if image_description != None and len(image_description) > 0:
         s_message["attachment_description"] = image_description
 
-    db.collection(str(message.chat.id)).add(s_message)
+    update_time, message_ref = db.collection(str(message.chat.id)).add(s_message)
+    return message_ref.id
 
 
 def get_last_messages(chat_id, limit) -> List:
@@ -63,3 +64,6 @@ def get_last_messages(chat_id, limit) -> List:
     result = list(map(lambda snap: snap.to_dict(), snapshots))
     result.reverse()
     return result
+
+def get_message(chat_id, message_id) -> DocumentSnapshot:
+    return db.collection(chat_id).document(message_id).get()

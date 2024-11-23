@@ -3,15 +3,16 @@
 import logging
 from typing import Callable
 import ffmpeg.stream
-from telegram import Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     filters,
     ApplicationBuilder,
     ContextTypes,
     CommandHandler,
     MessageHandler,
+    CallbackQueryHandler,
 )
-from firebase import save_message as fb_save_message, get_last_messages
+from firebase import save_message as fb_save_message, get_last_messages, get_message
 from md2tgmd import escape
 
 import os
@@ -28,7 +29,7 @@ from open_ai import (
 import base64
 import ffmpeg
 
-from tools import process_urls
+from tools import process_urls, extract_urls_from_message
 
 load_dotenv()
 
@@ -48,7 +49,7 @@ async def save_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     image_description = await process_images(update, context)
-    fb_save_message(update.message, image_description)
+    fb_message_id = fb_save_message(update.message, image_description)
 
     try:
         message_text = (
@@ -62,19 +63,30 @@ async def save_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         if message_text == None:
             return
-        url_summaries = await process_urls(message_text)
-        if url_summaries == None or len(url_summaries) == 0:
-            return
-        for summary in url_summaries:
-            title = (
-                summary.metadata["title"] if "title" in summary.metadata else "Summary"
-            )
-            reply_text = f"*{escape(title)}*: {escape(summary.page_content)}"
+
+        urls = extract_urls_from_message(message_text)
+        if urls != None and len(urls) > 0:
+            chat_id = update.effective_chat.id
             await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=reply_text,
+                chat_id=chat_id,
+                text="Actions:",
                 reply_to_message_id=update.message.message_id,
                 parse_mode="MarkdownV2",
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "Get URL summary",
+                                callback_data="u:"
+                                + str(chat_id)
+                                + ":"
+                                + fb_message_id
+                                + ":"
+                                + str(update.message.message_id),
+                            ),
+                        ]
+                    ]
+                ),
             )
     except Exception as error:
         await context.bot.send_message(
@@ -210,17 +222,40 @@ async def process_video_message(
         audio_file_path = path_to_video_file.with_suffix(".mp3")
         ffmpeg.input(path_to_video_file).output(audio_file_path.name).run()
         transcription = ai_transcript_audio(audio_file_path)
-        fb_save_message(update.message, transcription)
+        fb_message_id = fb_save_message(update.message, transcription)
         if os.getenv("IS_ECHO_VOICE_MESSAGES") == "true":
-            reply_text = (
-                f"*{update.message.from_user.username}*: {escape(transcription)}"
-            )
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=reply_text,
-                reply_to_message_id=update.message.message_id,
-                parse_mode="MarkdownV2",
-            )
+            if os.getenv("ECHO_VOICE_MESSAGE_TYPE") == "BUTTON":
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text="Actions:",
+                    reply_to_message_id=update.message.message_id,
+                    parse_mode="MarkdownV2",
+                    reply_markup=InlineKeyboardMarkup(
+                        [
+                            [
+                                InlineKeyboardButton(
+                                    "Get transcription",
+                                    callback_data="m:"
+                                    + str(update.effective_chat.id)
+                                    + ":"
+                                    + fb_message_id
+                                    + ":"
+                                    + str(update.message.message_id),
+                                ),
+                            ]
+                        ]
+                    ),
+                )
+            else:
+                reply_text = (
+                    f"*{update.message.from_user.username}*: {escape(transcription)}"
+                )
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=reply_text,
+                    reply_to_message_id=update.message.message_id,
+                    parse_mode="MarkdownV2",
+                )
     except:
         pass
     finally:
@@ -241,8 +276,31 @@ async def process_video_note_message(
         audio_file_path = path_to_video_file.with_suffix(".mp3")
         ffmpeg.input(path_to_video_file).output(audio_file_path.name).run()
         transcription = ai_transcript_audio(audio_file_path)
-        fb_save_message(update.message, transcription)
+        fb_message_id = fb_save_message(update.message, transcription)
         if os.getenv("IS_ECHO_VOICE_MESSAGES") == "true":
+            # if os.getenv("ECHO_VOICE_MESSAGE_TYPE") == "BUTTON":
+            #     chat_id = update.effective_chat.id
+            #     await context.bot.send_message(
+            #         chat_id=chat_id,
+            #         text="Actions:",
+            #         reply_to_message_id=update.message.message_id,
+            #         parse_mode="MarkdownV2",
+            #         reply_markup=InlineKeyboardMarkup(
+            #             [
+
+            # InlineKeyboardButton(
+            #     "Get transcription",
+            #     callback_data="t:"+str(chat_id)
+            #     + ":"
+            #     + fb_message_id
+            #     + ":"
+            #     + str(update.message.message_id),
+            # ),
+
+            #             ]
+            #         ),
+            #     )
+            # else:
             reply_text = (
                 f"*{update.message.from_user.username}*: {escape(transcription)}"
             )
@@ -259,6 +317,37 @@ async def process_video_note_message(
             path_to_video_file.unlink()
         if audio_file_path != None:
             audio_file_path.unlink()
+
+
+async def process_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Parses the CallbackQuery and updates the message text."""
+    query = update.callback_query
+    type, chat_id, fb_message_id, reply_to_message_id = query.data.split(":")
+    text = None
+    if type == "u":
+        message = get_message(chat_id, fb_message_id).to_dict()
+        message_text = message["text"]
+        url_summaries = await process_urls(message_text)
+        if url_summaries == None or len(url_summaries) == 0:
+            return
+        for summary in url_summaries:
+            title = (
+                summary.metadata["title"] if "title" in summary.metadata else "Summary"
+            )
+            text = f"*{escape(title)}*: {escape(summary.page_content)}"
+    elif type == "m":
+        message = get_message(chat_id, fb_message_id).to_dict()
+        text = escape(message["text"])
+    # CallbackQueries need to be answered, even if no notification to the user is needed
+    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
+    await query.answer()
+
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        reply_to_message_id=int(reply_to_message_id),
+        text=text,
+        parse_mode="MarkdownV2",
+    )
 
 
 def start_bot():
@@ -292,5 +381,6 @@ def start_bot():
     application.add_handler(voice_message_handler)
     application.add_handler(video_message_handler)
     application.add_handler(video_note_message_handler)
+    application.add_handler(CallbackQueryHandler(process_callback))
 
     application.run_polling()
