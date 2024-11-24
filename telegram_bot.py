@@ -322,6 +322,7 @@ async def process_video_note_message(
 async def process_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Parses the CallbackQuery and updates the message text."""
     query = update.callback_query
+    await query.edit_message_text(text="🤖 Processing... 🍆💦")
     type, chat_id, fb_message_id, reply_to_message_id = query.data.split(":")
     text = None
     if type == "u":
@@ -342,12 +343,7 @@ async def process_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
     await query.answer()
 
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        reply_to_message_id=int(reply_to_message_id),
-        text=text,
-        parse_mode="MarkdownV2",
-    )
+    await query.edit_message_text(text=text, parse_mode="MarkdownV2")
 
 
 def start_bot():
